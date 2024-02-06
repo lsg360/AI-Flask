@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .canvas-container {
+            display: flex;
+            width: 60%;
+            max-width: 800px;
+            margin-bottom: 10px;
+        }
+        canvas {
+            border: 1px solid #000;
+            width: 60%;
+            height: 400px;
+        }
+        #generatedImage {
+            max-width: 80%; /* Adjust the width as needed */
+            max-height: 400px;
+            margin-left: 40px; /* Adjust the margin between canvas and generated image */
+        }
+        .input-container {
+            width: 480px;
+            margin-right: 340px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        label, input {
+            display: block;
+            margin: 10px 0;
+            width: 100%;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var canvas = document.getElementById('drawingCanvas');
+            var context = canvas.getContext('2d');
+            var isDrawing = false;
+
+            canvas.addEventListener('mousedown', function (e) {
+                isDrawing = true;
+                context.beginPath();
+                context.moveTo(e.clientX - canvas.getBoundingClientRect().left, e.clientY - canvas.getBoundingClientRect().top);
+            });
+
+            canvas.addEventListener('mousemove', function (e) {
+                if (isDrawing) {
+                    context.lineTo(e.clientX - canvas.getBoundingClientRect().left, e.clientY - canvas.getBoundingClientRect().top);
+                    context.stroke();
+                }
+            });
+
+            canvas.addEventListener('mouseup', function () {
+                isDrawing = false;
+            });
+
+            canvas.addEventListener('mouseleave', function () {
+                isDrawing = false;
+            });
+        });
+
+        function generateImage() {
+            var canvas = document.getElementById('drawingCanvas');
+            var promptInput = document.getElementById('promptInput');
+            var generatedImage = document.getElementById('generatedImage');
+
+            var imageDataUrl = canvas.toDataURL();
+            var prompt = promptInput.value;
+
+            fetch('/generate_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    imageDataUrl: imageDataUrl,
+                    prompt: prompt,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                generatedImage.src = 'data:image/png;base64,' + data.base64_image;
+                generatedImage.style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</head>
+<body>
+
+    <div class="canvas-container">
+        <canvas id="drawingCanvas" width="400" height="400"></canvas>
+        <img id="generatedImage" alt="Generated Image" style="display: none;">
+    </div>
+    
+    <div class="input-container">
+        <label for="promptInput">Enter Prompt:</label>
+        <input type="text" id="promptInput" name="promptInput">
+        <button type="button" onclick="generateImage()">Generate Image</button>
+    </div>
+
+</body>
+</html>
